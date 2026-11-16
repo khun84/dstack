@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { fileURLToPath } from "node:url";
-import { blockedBy, globToRegex, loadRows, readRules, validThread, writeRules } from "./lib.mjs";
+import { blockedBy, globToRegex, loadRows, readRules, validThread, withRulesLock, writeRules } from "./lib.mjs";
 
 const USAGE = "usage: route.mjs [status | block <pattern> [--dry-run] | unblock <pattern> | reset] [--thread <id>]";
 
@@ -26,6 +26,16 @@ export function run(argv, env = process.env) {
   const dryRun = args.includes("--dry-run");
   const [command = "status", pattern] = args.filter((arg) => arg !== "--dry-run");
   if (!validThread(thread)) return { code: 2, out: "No chat id. Run inside Codex (CODEX_THREAD_ID) or pass --thread <id>." };
+  if (dryRun && command !== "block") return { code: 2, out: USAGE };
+  try {
+    const execute = () => runCommand(thread, command, pattern, dryRun);
+    return !dryRun && ["block", "unblock", "reset"].includes(command) ? withRulesLock(thread, execute) : execute();
+  } catch (error) {
+    return { code: 1, out: `Routing command failed: ${error.message}` };
+  }
+}
+
+function runCommand(thread, command, pattern, dryRun) {
   if (command === "reset") {
     writeRules(thread, []);
     return { code: 0, out: "Cleared this chat's rules. pstack routing applies again." };

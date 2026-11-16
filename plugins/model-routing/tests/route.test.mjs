@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { spawn as spawnProcess, spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
@@ -105,4 +105,99 @@ test("guard.mjs as a hook prints a deny decision, and stays silent on bad input"
   const garbage = hook("not json");
   assert.equal(garbage.status, 0);
   assert.equal(garbage.stdout, "");
+});
+
+test("guard still denies when the pstack path is a directory", () => {
+  route("t-unreadable", "block", "ilmu/*");
+  const result = spawnSync(process.execPath, [join(scripts, "guard.mjs")], {
+    input: JSON.stringify({ tool_name: "spawn_agent", session_id: "t-unreadable", tool_input: { model: "ilmu/glm-5.3" } }),
+    env: { ...process.env, PSTACK_MODELS: root },
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const decision = JSON.parse(result.stdout).hookSpecificOutput;
+  assert.equal(decision.permissionDecision, "deny");
+  assert.match(decision.permissionDecisionReason, /pstack file could not be read/i);
+  assert.match(decision.permissionDecisionReason, /no alternatives are listed/i);
+  assert.match(decision.permissionDecisionReason, /Retry with an allowed model from your role's/);
+  assert.match(decision.permissionDecisionReason, /Ask the user only if every model in that row is blocked/);
+});
+
+test("guard subprocess allows missing state and denies broken state", () => {
+  writeFileSync(join(root, "state", "t-bad-hook.json"), "{not json");
+  for (const [thread, denied] of [["t-missing-hook", false], ["t-bad-hook", true]]) {
+    const result = spawnSync(process.execPath, [join(scripts, "guard.mjs")], {
+      input: JSON.stringify({ tool_name: "spawn_agent", session_id: thread, tool_input: { model: "gpt-6.1-sol" } }),
+      env: { ...process.env, PSTACK_MODELS: root }, encoding: "utf8",
+    });
+    assert.equal(result.status, 0, result.stderr);
+    if (denied) assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, "deny");
+    else assert.equal(result.stdout, "");
+  }
+  assert.equal(route("t-bad-hook", "reset").code, 0);
+  assert.deepEqual(patterns("t-bad-hook"), []);
+});
+
+test("concurrent block commands keep every distinct rule", async () => {
+  const expected = Array.from({ length: 40 }, (_, mask) =>
+    [..."gpt-6.1-sol"].map((char, index) => index < 6 && (mask & (1 << index)) ? "?" : char).join(""));
+  assert.equal(new Set(expected).size, 40);
+  const results = await Promise.all(expected.map((pattern) => new Promise((resolve, reject) => {
+    const child = spawnProcess(process.execPath, [join(scripts, "route.mjs"), "block", pattern, "--thread", "t-concurrent"], {
+      env: process.env,
+      timeout: 10000,
+    });
+    let output = "";
+    child.stdout.on("data", (data) => { output += data; });
+    child.stderr.on("data", (data) => { output += data; });
+    child.on("error", reject);
+    child.on("close", (code) => resolve({ code, output }));
+  })));
+  for (const result of results) assert.equal(result.code, 0, result.output);
+  const actual = patterns("t-concurrent").sort();
+  assert.deepEqual(actual, expected.sort(), `Kept ${actual.length} of ${expected.length} rules`);
+});
+
+test("active locks reject all writes but allow status and dry run", () => {
+  route("t-locked", "block", "ilmu/*");
+  const lock = join(root, "state", "t-locked.json.lock");
+  writeFileSync(lock, "");
+  assert.equal(route("t-locked", "status").code, 0);
+  assert.equal(route("t-locked", "block", "gpt-*", "--dry-run").code, 0);
+  for (const args of [["unblock", "ilmu/*"], ["reset"]]) {
+    assert.equal(route("t-locked", ...args, "--dry-run").code, 2);
+    assert.deepEqual(patterns("t-locked"), ["ilmu/*"]);
+  }
+  for (const args of [["block", "gpt-*"], ["unblock", "ilmu/*"], ["reset"]]) {
+    const now = new Date();
+    utimesSync(lock, now, now);
+    const result = spawnSync(process.execPath, [join(scripts, "route.mjs"), ...args, "--thread", "t-locked"], {
+      env: process.env, encoding: "utf8", timeout: 5000,
+    });
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stdout, /timed out.*lock/i);
+    assert.deepEqual(patterns("t-locked"), ["ilmu/*"]);
+    assert.equal(existsSync(lock), true);
+  }
+});
+
+test("stale locks are replaced and released after the update", () => {
+  const lock = join(root, "state", "t-stale.json.lock");
+  writeFileSync(lock, "");
+  const old = new Date(Date.now() - 11000);
+  utimesSync(lock, old, old);
+  assert.equal(route("t-stale", "block", "gpt-*").code, 0);
+  assert.deepEqual(patterns("t-stale"), ["gpt-*"]);
+  assert.equal(existsSync(lock), false);
+});
+
+test("failed updates release the lock so the next command can run", () => {
+  assert.equal(route("t-release", "block", "gemini*").code, 2);
+  assert.equal(existsSync(join(root, "state", "t-release.json.lock")), false);
+  const result = spawnSync(process.execPath, [join(scripts, "route.mjs"), "block", "gpt-*", "--thread", "t-release"], {
+    env: { ...process.env, PSTACK_MODELS: root }, encoding: "utf8",
+  });
+  assert.equal(result.status, 1);
+  assert.equal(existsSync(join(root, "state", "t-release.json.lock")), false);
+  assert.equal(route("t-release", "block", "gpt-*").code, 0);
 });

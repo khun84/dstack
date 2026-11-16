@@ -9,6 +9,12 @@ A per-chat block list for subagent models. A `spawn_agent` hook denies blocked m
 
 Script: `node <folder of this SKILL.md>/../../scripts/route.mjs <command>`. It reads `CODEX_THREAD_ID`, so run it from the lead chat only. Rules written by a subagent are never read.
 
+## Trust the hooks
+
+Blocking is enforced only when the plugin hooks are trusted. For this local marketplace, approve both hooks once in Codex. Approve them again after a plugin update changes the hook file.
+
+After a block, check the next turn's context for `Model routing for this chat: blocked ...`. This line comes from the status-line hook. If the chat has rules but the line is missing, tell the user the hooks are not trusted. They must approve the hooks in Codex before routing is enforced. Do not claim blocking is enforced without this line.
+
 ## Short forms
 
 | User types | Command |

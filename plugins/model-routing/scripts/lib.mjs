@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readFileSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -66,4 +66,38 @@ export function writeRules(thread, rules) {
   const temp = `${path}.${process.pid}.tmp`;
   writeFileSync(temp, `${JSON.stringify({ thread, blocked: rules }, null, 2)}\n`);
   renameSync(temp, path);
+}
+
+export function withRulesLock(thread, update) {
+  mkdirSync(stateDir(), { recursive: true });
+  const path = `${statePath(thread)}.lock`;
+  const deadline = Date.now() + 3000;
+  const backoff = new Int32Array(new SharedArrayBuffer(4));
+  let fd;
+  while (fd === undefined) {
+    try {
+      fd = openSync(path, "wx");
+    } catch (error) {
+      if (error.code !== "EEXIST") throw error;
+      try {
+        if (Date.now() - statSync(path).mtimeMs > 10000) unlinkSync(path);
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+      }
+      if (Date.now() >= deadline) throw new Error(`Timed out waiting for routing lock ${path} after 3 seconds. Retry the command.`);
+      Atomics.wait(backoff, 0, 0, 20);
+    }
+  }
+  try {
+    return update();
+  } finally {
+    try {
+      // A stale owner must not remove a newer owner's lock.
+      if (statSync(path).ino === fstatSync(fd).ino) unlinkSync(path);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    } finally {
+      closeSync(fd);
+    }
+  }
 }
