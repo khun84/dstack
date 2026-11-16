@@ -20,6 +20,8 @@ plugins/<name>/
 
 Shared code reads harness-specific inputs (session ID, plugin root, hook payload) at its edge, so the logic in between stays the same for every harness.
 
+Scripts and hooks are Node.js (`.mjs`) with built-in modules only, no npm packages. Claude Code ships with Node, and plugins cannot install dependencies for you.
+
 ## Plugins
 
 - `model-routing`. Block model providers or models per chat. Not built yet. Codex first.
@@ -29,7 +31,7 @@ Shared code reads harness-specific inputs (session ID, plugin root, hook payload
 1. Create `plugins/<name>/` with its shared files.
 2. Add a manifest for each supported harness, for Codex `plugins/<name>/.codex-plugin/plugin.json`.
 3. List it in each harness catalog, for Codex `.agents/plugins/marketplace.json` with `"path": "./plugins/<name>"`.
-4. Run `python3 check.py`.
+4. Run `node check.mjs`.
 
 ## Codex
 
@@ -45,8 +47,8 @@ source = "/absolute/path/to/dstack"
 
 ### Edit loop
 
-Codex installs a copy of each plugin into `~/.codex/plugins/cache/dstack/<name>/<version>/`. Editing this repo does not change the installed copy. After a change, bump `version` in both `plugin.json` and `marketplace.json`, run `python3 check.py`, reinstall, and restart Codex.
+Codex installs a copy of each plugin into `~/.codex/plugins/cache/dstack/<name>/<version>/`. Editing this repo does not change the installed copy. After a change, bump `version` in both `plugin.json` and `marketplace.json`, run `node check.mjs`, reinstall, and restart Codex.
 
 Hook commands find their own files through `${PLUGIN_ROOT}`. Codex also sets `PLUGIN_DATA` to a per-plugin data directory.
 
-`check.py` checks the Codex catalog today. It grows a check per harness as each one is added.
+`check.mjs` checks the Codex catalog today. It grows a check per harness as each one is added.
