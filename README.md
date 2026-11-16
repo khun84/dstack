@@ -24,7 +24,7 @@ Scripts and hooks are Node.js (`.mjs`) with built-in modules only, no npm packag
 
 ## Plugins
 
-- `model-routing`. Block model providers or models per chat. Not built yet. Codex first.
+- `model-routing`. Block model providers or models per chat with `$route`. A `spawn_agent` hook denies blocked models and names equal-strength models from `~/.agents/pstack-models.md`. Rules live in `~/.agents/model-routing/<chat id>.json`. Codex only.
 
 ## Add a plugin
 
@@ -52,3 +52,5 @@ Codex installs a copy of each plugin into `~/.codex/plugins/cache/dstack/<name>/
 Hook commands find their own files through `${PLUGIN_ROOT}`. Codex also sets `PLUGIN_DATA` to a per-plugin data directory.
 
 `check.mjs` checks the Codex catalog today. It grows a check per harness as each one is added.
+
+Run a plugin's tests with `node --test plugins/<name>/tests/*.test.mjs`.
