@@ -1,0 +1,17 @@
+{
+  "name": "model-routing",
+  "version": "0.1.0",
+  "description": "Block model providers or models per chat, without editing pstack-models.md. A spawn_agent guard denies blocked models and names equal-strength alternatives.",
+  "keywords": ["codex", "pstack", "model-routing", "subagents", "hooks"],
+  "interface": {
+    "displayName": "Model routing",
+    "shortDescription": "Per-chat model block list for subagent spawns.",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "$route",
+      "$route glm",
+      "$route off"
+    ]
+  }
+}
