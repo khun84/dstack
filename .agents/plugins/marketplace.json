@@ -16,6 +16,19 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "plain-it",
+      "version": "0.1.0",
+      "source": {
+        "source": "local",
+        "path": "./plugins/plain-it"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

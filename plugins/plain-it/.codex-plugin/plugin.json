@@ -1,0 +1,11 @@
+{
+  "name": "plain-it",
+  "version": "0.1.0",
+  "description": "Remind Codex to use plain English and check Git commit messages.",
+  "hooks": "./hooks/codex-hooks.json",
+  "interface": {
+    "displayName": "plain-it",
+    "shortDescription": "Plain English reminders and Git commit message checks.",
+    "category": "Productivity"
+  }
+}

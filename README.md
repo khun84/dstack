@@ -26,6 +26,8 @@ Scripts and hooks are Node.js (`.mjs`) with built-in modules only, no npm packag
 
 - `model-routing`. Block model providers or models per chat with `$route`. A `spawn_agent` hook denies blocked models and names equal-strength models from `~/.agents/pstack-models.md`. Rules live in `~/.agents/model-routing/<chat id>.json`. Codex only.
 
+- `plain-it`. Remind Codex to use plain English and check inline Git commit messages. It uses Python 3 and Git. If these hooks are already in your user hook config, remove the matching entries after you verify the plugin so each hook runs once.
+
 ## Add a plugin
 
 1. Create `plugins/<name>/` with its shared files.
