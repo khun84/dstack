@@ -16,6 +16,19 @@
         "authentication": "ON_INSTALL"
       },
       "category": "Productivity"
+    },
+    {
+      "name": "workflow-hooks",
+      "version": "0.1.0",
+      "source": {
+        "source": "local",
+        "path": "./plugins/workflow-hooks"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
     }
   ]
 }

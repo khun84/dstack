@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat \"${PLUGIN_ROOT}/hooks/b1-reminder.txt\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${PLUGIN_ROOT}/scripts/git-commit-lint.py\"",
+            "timeout": 5
+          }
+        ],
+        "matcher": "Bash"
+      }
+    ]
+  }
+}
