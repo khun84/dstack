@@ -18,11 +18,11 @@
       "category": "Productivity"
     },
     {
-      "name": "workflow-hooks",
+      "name": "reply-style-and-commit-lint",
       "version": "0.1.0",
       "source": {
         "source": "local",
-        "path": "./plugins/workflow-hooks"
+        "path": "./plugins/reply-style-and-commit-lint"
       },
       "policy": {
         "installation": "AVAILABLE",
