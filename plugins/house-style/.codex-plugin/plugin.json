@@ -1,10 +1,10 @@
 {
-  "name": "reply-style-and-commit-lint",
+  "name": "house-style",
   "version": "0.1.0",
   "description": "Remind Codex to use plain English and check Git commit messages.",
   "hooks": "./hooks/codex-hooks.json",
   "interface": {
-    "displayName": "Reply Style and Commit Lint",
+    "displayName": "House Style",
     "shortDescription": "Plain English reminders and Git commit message checks.",
     "category": "Productivity"
   }

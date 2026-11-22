@@ -18,11 +18,11 @@
       "category": "Productivity"
     },
     {
-      "name": "reply-style-and-commit-lint",
+      "name": "house-style",
       "version": "0.1.0",
       "source": {
         "source": "local",
-        "path": "./plugins/reply-style-and-commit-lint"
+        "path": "./plugins/house-style"
       },
       "policy": {
         "installation": "AVAILABLE",
