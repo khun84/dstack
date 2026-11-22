@@ -18,11 +18,11 @@
       "category": "Productivity"
     },
     {
-      "name": "house-style",
+      "name": "plain-it",
       "version": "0.1.0",
       "source": {
         "source": "local",
-        "path": "./plugins/house-style"
+        "path": "./plugins/plain-it"
       },
       "policy": {
         "installation": "AVAILABLE",
